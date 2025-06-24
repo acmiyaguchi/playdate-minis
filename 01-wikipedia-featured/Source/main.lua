@@ -3,6 +3,12 @@ local gfx <const> = playdate.graphics
 
 import "CoreLibs/graphics"
 import "CoreLibs/object"
+-- Import the sprite and timer libraries, which are now used
+import "CoreLibs/sprites"
+import "CoreLibs/timer"
+
+
+gfx.setFont(gfx.getSystemFont())
 
 import "playout.lua"
 import "wikipedia.lua"
@@ -17,74 +23,73 @@ local jsonData = nil
 ---
 -- Article Reader State
 ---
-local articleUiTree = nil
+local contentSprite = nil -- This will hold the sprite for our scrollable text
 local scrollY = 0
 local contentHeight = 0
-local viewportFrame = nil
-
+local viewportHeight = 240
+local contentInitialY = 0
+local PADDING = 10
 
 function setup_article_reader(article)
-    local viewport = playout.box.new({
-        id = "viewport",
-        width = 400,
-        height = 240,
-        padding = 10
-    })
+    playdate.display.setScale(1) -- Add this line
+    local titleFont = gfx.font.new("Asheville-Sans-24-Bold.fnt")
+    local bodyFont = gfx.font.new("Asheville-Sans-14-Light.fnt")
 
+    -- 1. Create the container with just the content that will scroll.
+    --    This will be rendered into a single, tall sprite.
     local contentContainer = playout.box.new({
         id = "content",
+        -- The width is constrained by the screen, minus padding
+        width = 400 - (PADDING * 2),
         direction = playout.kDirectionVertical,
-        spacing = 8
+        spacing = 8,
+        font = bodyFont,
     })
 
-    contentContainer:appendChild(playout.text.new(article.displaytitle, { font_size = 20, font_weight = "bold" }))
+    contentContainer:appendChild(playout.text.new(article.normalizedtitle, { font = titleFont }))
+    contentContainer:appendChild(playout.text.new(article.extract))
 
-    for paragraph in string.gmatch(article.extract, "[^\\n]+") do
-        contentContainer:appendChild(playout.text.new(paragraph))
-    end
+    -- 2. Use the playout.tree:asSprite() interface to create a sprite from the layout
+    local contentTree = playout.tree.new(contentContainer)
+    contentSprite = contentTree:asSprite()
 
-    viewport:appendChild(contentContainer)
+    -- 3. Set the sprite's initial position and add it to the display list
+    contentInitialY = PADDING
+    contentSprite:moveTo(PADDING, contentInitialY)
+    contentSprite:add()
 
-    articleUiTree = playout.tree.new(viewport)
-    articleUiTree:layout()
+    -- 4. Store the calculated height of the content for scrolling limits
+    contentHeight = contentTree.rect.height
+    viewportHeight = 240 - (PADDING * 2)
 
-    -- FINAL FIX: Use the properties that are explicitly in the documentation.
-    -- The tree's .rect property represents the frame of the root node (our viewport).
-    viewportFrame = articleUiTree.rect
-
-    -- The root node's .childRects table holds the calculated frames of its children.
-    -- The content container is the first and only child.
-    local contentFrame = articleUiTree.root.childRects[1]
-    contentHeight = contentFrame.height
+    -- 5. Set a clipping rectangle to create the "viewport" effect
+    --    This ensures the tall sprite is only visible within this area.
+    gfx.sprite.setClipRectsInRange(PADDING, PADDING, 400 - (PADDING * 2), viewportHeight, 0, 32767)
 end
 
 -- This function runs EVERY FRAME while in the STATE_ARTICLE_READER.
--- It should be very lightweight.
 function update_article_reader()
-    -- 1. Handle Input (no changes here)
-    local crankChange = pd.getCrankChange()
+    -- 1. Handle Input
+    local crankChange, _ = pd.getCrankChange()
     scrollY = scrollY + crankChange
 
-    local maxScroll = contentHeight - viewportFrame.height
+    -- 2. Clamp scroll value
+    local maxScroll = contentHeight - viewportHeight
     if maxScroll < 0 then maxScroll = 0 end
     scrollY = math.max(0, math.min(scrollY, maxScroll))
 
-    -- 2. Draw Graphics
-    gfx.clear(gfx.kColorWhite)
+    -- 3. Move the sprite
+    --    The sprite interface simplifies drawing. We just move the sprite
+    --    and the sprite.update() call handles the rest.
+    contentSprite:moveTo(PADDING, contentInitialY - scrollY)
 
-    gfx.pushContext()
-    gfx.setClipRect(viewportFrame.x, viewportFrame.y, viewportFrame.width, viewportFrame.height)
-    gfx.setDrawOffset(0, -scrollY)
-
-    -- FIX: Draw the entire tree. Playout will handle drawing all the children.
-    -- Our clipping and translation will handle the "viewport" effect.
-    articleUiTree:draw()
-
-    gfx.popContext()
+    -- The screen is cleared automatically when sprites are in use,
+    -- but we can draw the debug bar on top.
+    draw_debug_bar()
 end
 
 ---
--- Loading State
+-- Loading State (no changes)
 ---
 local requested = false
 local displayText = "Loading..."
@@ -106,15 +111,13 @@ function update_loading()
             function(text, ok)
                 if ok then
                     displayText = "Parsing data..."
-                    jsonData = json.decode(text) -- Decode the JSON string into a Lua table
+                    jsonData = json.decode(text)
 
-                    -- Now that we have the data, set up the next view
                     setup_article_reader(jsonData.tfa)
 
-                    -- Finally, change the game state
                     gameState = STATE_ARTICLE_READER
                 else
-                    displayText = text -- Will contain the error message
+                    displayText = text
                     progressText = ""
                 end
             end,
@@ -129,6 +132,19 @@ function update_loading()
     end
 end
 
+function draw_debug_bar()
+    local debugInfo = string.format(
+        "State: %s | Scroll: %.0f", -- Use %.0f to format the float as an integer
+        gameState == STATE_LOADING and "LOADING" or "ARTICLE",
+        scrollY or 0
+    )
+    if jsonData and jsonData.tfa and jsonData.tfa.normalizedtitle then
+        debugInfo = debugInfo .. " | Title: " .. tostring(jsonData.tfa.normalizedtitle)
+    end
+    -- Draw debug text in an area that won't be cleared by the sprite system
+    gfx.drawText(debugInfo, 5, 223)
+end
+
 ---
 -- Main Update Loop
 ---
@@ -138,4 +154,8 @@ function pd.update()
     elseif gameState == STATE_ARTICLE_READER then
         update_article_reader()
     end
+
+    -- This line is essential for any project using sprites.
+    -- It tells the graphics system to update sprite positions and redraw them.
+    gfx.sprite.update()
 end
