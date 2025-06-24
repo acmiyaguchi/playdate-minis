@@ -1,7 +1,3 @@
-Of course. Here is a markdown document detailing the structure of the JSON data, which can serve as a reference for your project.
-
----
-
 # Wikipedia Data API Structure Reference
 
 This document outlines the structure of the JSON data feed from Wikipedia, as exemplified by the file for June 23, 2025. The root of the JSON is an object containing five main keys.
