@@ -1,0 +1,8 @@
+{
+    "toyboxes": {
+        "github.com/potch/playout": "main"
+    },
+    "installed": {
+        "github.com/potch/playout": "main@15b7a8b8f030e465d5f693871ce042264a4cb347"
+    }
+}
