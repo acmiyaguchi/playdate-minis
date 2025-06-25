@@ -10,7 +10,7 @@ import "CoreLibs/timer"
 
 gfx.setFont(gfx.getSystemFont())
 
-import "playout.lua"
+import "../toyboxes/toyboxes.lua"
 import "wikipedia.lua"
 
 
