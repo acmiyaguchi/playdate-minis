@@ -15,3 +15,11 @@ So specifically with curl:
 ```bash
 curl https://api.wikimedia.org/feed/v1/wikipedia/en/featured/2025/06/23
 ```
+
+## toybox
+
+```bash
+uv tool install toyboxpy
+toybox add potch/playout
+toybox update
+```
