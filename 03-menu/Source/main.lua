@@ -1,14 +1,14 @@
 import "CoreLibs/graphics"
-import "../toyboxes/toyboxes.lua"
+import "manager.lua"
 import "scenes/menu.lua"
 
 local gfx <const> = playdate.graphics
-local manager = Manager()
-manager:enter(Menu)
+SceneManager:hook()
+SceneManager:enter(MainMenu())
 
 -- frame callback
 function playdate.update()
-    manager:emit("update")
+    SceneManager:emit("update")
     gfx.sprite.update()
     playdate.drawFPS()
 end

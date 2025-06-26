@@ -1,6 +1,7 @@
-class("NumberedBoxes").extends(Room)
+import "../manager.lua"
 local gfx <const> = playdate.graphics
 
+class("NumberedBoxes").extends(Room)
 
 local function createMenu(ui)
     local box = ui.box
@@ -38,8 +39,6 @@ function NumberedBoxes:enter(previous, ...)
     sprite:add()
 end
 
-function NumberedBoxes:update(dt) end
-
-function NumberedBoxes:leave(next, ...) end
-
-function NumberedBoxes:draw() end
+function NumberedBoxes:BButtonDown()
+    SceneManager:pop()
+end

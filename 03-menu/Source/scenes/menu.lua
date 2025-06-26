@@ -1,20 +1,23 @@
 --[[
 This is the main menu scene to go between different scenes.
 ]]
+import "../manager.lua"
 import "numbered_boxes.lua"
 local gfx <const> = playdate.graphics
 
-class("Menu").extends(Room)
-local manager = Manager()
+class("MainMenu").extends(Room)
 
 local menuItems = {
-    { label = "Numbered Boxes", scene = NumberedBoxes },
+    { label = "Numbered Boxes",           scene = NumberedBoxes },
+    { label = "Non-Functional Example 1", scene = nil },
+    { label = "Non-Functional Example 2", scene = nil },
+    { label = "Non-Functional Example 3", scene = nil },
 }
 local currentSceneIndex = 1
 local container = nil
 local sprite = nil
 
-function Menu:enter(previous, ...)
+function MainMenu:enter(previous, ...)
     container = playout.tree:build(function(ui)
         local box = ui.box
         local text = ui.text
@@ -24,14 +27,16 @@ function Menu:enter(previous, ...)
             local itemBox = box(
                 {
                     border = 1,
-                    id = "item" .. idx
+                    padding = 4,
+                    id = "item" .. idx,
+                    direction = playout.kDirectionHorizontal,
                 },
-                { text(item.label) }
+                { text(item.label, { flex = 1 }) }
             )
             table.insert(itemBoxes, itemBox)
         end
         return box(
-            { border = 1 },
+            { border = 1, maxWidth = 300 },
             {
                 text("Main Menu", { font = gfx.getSystemFont(gfx.font.kVariantBold) }),
                 box(
@@ -49,12 +54,27 @@ function Menu:enter(previous, ...)
     sprite:add()
 end
 
-function Menu:update(dt)
+function updateCurrentSelection()
+
 end
 
-function Menu:leave(next, ...)
-    -- Logic to handle when leaving the menu can be added here if needed
+function MainMenu:downButtonDown()
+    currentSceneIndex = currentSceneIndex + 1
+    if currentSceneIndex > #menuItems then
+        currentSceneIndex = 1
+    end
+    updateCurrentSelection()
 end
 
-function Menu:draw()
+function MainMenu:upButtonDown()
+    currentSceneIndex = currentSceneIndex - 1
+    if currentSceneIndex < 1 then
+        currentSceneIndex = #menuItems
+    end
+    updateCurrentSelection()
+end
+
+function MainMenu:AButtonDown()
+    local selectedItem = menuItems[currentSceneIndex]
+    SceneManager:push(selectedItem.scene())
 end
