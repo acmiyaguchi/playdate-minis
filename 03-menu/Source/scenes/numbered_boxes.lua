@@ -29,13 +29,13 @@ local function createMenu(ui)
 end
 
 function NumberedBoxes:enter(previous, ...)
-    local menu = playout.tree:build(createMenu)
-    local menuSprite = menu:asSprite()
-    menuSprite:moveTo(
+    local scene = playout.tree:build(createMenu)
+    local sprite = scene:asSprite()
+    sprite:moveTo(
         playdate.display.getWidth() / 2,
         playdate.display.getHeight() / 2
     )
-    menuSprite:add()
+    sprite:add()
 end
 
 function NumberedBoxes:update(dt) end
