@@ -1,8 +1,10 @@
 {
     "toyboxes": {
-        "github.com/potch/playout": "main"
+        "github.com/potch/playout": "main",
+        "github.com/RobertCurry0216/roomy-playdate": "1"
     },
     "installed": {
-        "github.com/potch/playout": "main@15b7a8b8f030e465d5f693871ce042264a4cb347"
+        "github.com/potch/playout": "main@15b7a8b8f030e465d5f693871ce042264a4cb347",
+        "github.com/RobertCurry0216/roomy-playdate": "1.0.0"
     }
 }
